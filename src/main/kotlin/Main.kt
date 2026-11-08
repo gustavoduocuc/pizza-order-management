@@ -1,131 +1,127 @@
-package main.kotlin
+import model.Customer
+import model.DeliveryPerson
+import model.Order
+import model.OrderStatus
+import model.Product
+import service.assignNearestDeliveryPerson
+import service.calculateRequiredIngredients
+import service.createDeliveryPeople
+import service.createInitialInventory
+import service.createMenu
+import service.createPreloadedOrders
+import service.deductFromInventory
+import service.findMissingIngredients
+import service.notifyCustomer
+import service.printDailyReport
+import service.printInventory
+import service.printMenu
+import service.printOrderSummary
+import service.printRejectedOrder
+import service.readInput
+import service.readMenuChoice
+import service.readQuantity
+import service.readTextOrDefault
+import service.restock
+import service.validateEmail
+import service.validatePhone
 
-const val TELEFONO_POR_DEFECTO: String = "000000000"
-const val CANTIDAD_POR_DEFECTO: Int = 1
-const val PIZZAS_PARA_DESCUENTO: Int = 4
-const val PORCENTAJE_DESCUENTO: Double = 0.10
+/** Registra al cliente por consola aplicando valores por defecto y validaciones. */
+private fun registerCustomer(): Customer {
+    println("=== Registro de cliente ===")
+    val name = readTextOrDefault("Nombre: ", "nombre", "Sin nombre")
+    val address = readTextOrDefault("Dirección: ", "dirección", "Sin dirección")
+    val phone = validatePhone(readInput("Teléfono: "))
+    val email = validateEmail(readInput("Correo (opcional): "))
+    val customer = Customer(name, phone, email, address)
+    println("Cliente registrado: ${customer.describe()}")
+    return customer
+}
 
-fun formatearMonto(monto: Double): String = "$${"%.2f".format(monto)}"
-
-fun calcularDescuento(subtotal: Double, cantidadPizzas: Int): Double =
-    if (cantidadPizzas >= PIZZAS_PARA_DESCUENTO) subtotal * PORCENTAJE_DESCUENTO else 0.0
-
-fun asignarRepartidor(idPedido: Int): String = when (idPedido % 3) {
-    0 -> "Carlos"
-    1 -> "Valentina"
-    else -> "Matías"
+/**
+ * Acepta el pedido: lo crea, lo deja listo, descuenta el inventario,
+ * asigna el repartidor más cercano y notifica al cliente.
+ * Retorna null si ocurre un error controlado.
+ */
+private fun acceptOrder(
+    id: Int,
+    customer: Customer,
+    products: List<Product>,
+    notes: String?,
+    required: Map<String, Int>,
+    inventory: MutableMap<String, Int>,
+    deliveryPeople: List<DeliveryPerson>
+): Order? = try {
+    val order = Order(id, customer, products, notes)
+    order.calculateTotal()
+    order.changeStatus(OrderStatus.READY)
+    deductFromInventory(required, inventory)
+    println("Pedido confirmado.")
+    val deliveryPerson = assignNearestDeliveryPerson(deliveryPeople)
+    if (deliveryPerson != null) {
+        order.deliveryPerson = deliveryPerson
+        deliveryPerson.deliverOrder(order)
+    } else {
+        println("No hay repartidores disponibles: el pedido queda en estado ${order.status.label}.")
+    }
+    notifyCustomer(order)
+    order
+} catch (e: IllegalArgumentException) {
+    println("Error: ${e.message}")
+    null
+} catch (e: IllegalStateException) {
+    println("Error: ${e.message}")
+    null
 }
 
 fun main() {
-    // R1. Datos fijos de la pizza y del pedido
-    val nombrePizza: String = "Pepperoni"
-    val precioUnitario: Double = 8990.0
-    var ingredientesDisponibles: Int = 10
-    val idPedido: Int = 1
+    val inventory = createInitialInventory()
+    val menu = createMenu()
+    val deliveryPeople = createDeliveryPeople()
+    val preloadedOrders = createPreloadedOrders(menu)
 
-    // R2. Registro del cliente
-    println("=== Registro de cliente ===")
-
-    print("Nombre: ")
-    val nombreIngresado: String? = readlnOrNull()?.trim()
-    val nombre: String = if (nombreIngresado.isNullOrEmpty()) {
-        println("Aviso: no se ingresó nombre, se usará \"Sin nombre\".")
-        "Sin nombre"
-    } else {
-        nombreIngresado
-    }
-
-    print("Dirección: ")
-    val direccionIngresada: String? = readlnOrNull()?.trim()
-    val direccion: String = if (direccionIngresada.isNullOrEmpty()) {
-        println("Aviso: no se ingresó dirección, se usará \"Sin dirección\".")
-        "Sin dirección"
-    } else {
-        direccionIngresada
-    }
-
-    print("Teléfono: ")
-    val telefonoIngresado: String = readlnOrNull()?.trim() ?: ""
-    val telefono: String = try {
-        telefonoIngresado.toLong()
-        telefonoIngresado
-    } catch (e: NumberFormatException) {
-        println("Advertencia: teléfono vacío o no numérico, se usará $TELEFONO_POR_DEFECTO.")
-        TELEFONO_POR_DEFECTO
-    }
-
-    print("Cantidad de pizzas: ")
-    val cantidadIngresada: Int? = try {
-        readlnOrNull()?.trim()?.toInt()
-    } catch (e: NumberFormatException) {
-        null
-    }
-    val cantidadPizzas: Int = if (cantidadIngresada == null || cantidadIngresada <= 0) {
-        println("Advertencia: cantidad inválida, se usará $CANTIDAD_POR_DEFECTO pizza.")
-        CANTIDAD_POR_DEFECTO
-    } else {
-        cantidadIngresada
-    }
-
+    // 1. Inventario y menú
+    printInventory(inventory)
     println()
-    println("Cliente registrado:")
-    println("  Nombre: $nombre")
-    println("  Dirección: $direccion")
-    println("  Teléfono: $telefono")
-
-    // R3. Total con descuento
-    val subtotal: Double = precioUnitario * cantidadPizzas.toDouble()
-    val descuento: Double = calcularDescuento(subtotal, cantidadPizzas)
-    val totalPedido: Double = subtotal - descuento
-
+    printMenu(menu)
     println()
-    println("Subtotal: ${formatearMonto(subtotal)}")
-    println("Descuento: ${formatearMonto(descuento)}")
-    println("Total: ${formatearMonto(totalPedido)}")
 
-    // R4. Verificación de stock (1 unidad por pizza)
+    // 2. Registro del cliente
+    val customer = registerCustomer()
+    val notes = readInput("Notas del pedido (opcional): ")?.ifEmpty { null }
+
+    // 3. Pizza y cantidad
+    val product = readMenuChoice(menu)
+    val quantity = readQuantity()
+    val products = List(quantity) { product }
+
+    // 4. Verificación de stock y aceptación del pedido
     println()
-    var estadoPedido: String = if (ingredientesDisponibles >= cantidadPizzas) {
-        ingredientesDisponibles -= cantidadPizzas
-        println("Stock disponible: pedido confirmado. Stock restante: $ingredientesDisponibles")
-        "Preparación"
-    } else {
-        println("Stock insuficiente: se pidieron $cantidadPizzas pizzas y solo hay $ingredientesDisponibles disponibles.")
-        println("El pedido no puede completarse y fue cancelado.")
-        "Cancelado"
+    val required = calculateRequiredIngredients(products)
+    val missing = findMissingIngredients(required, inventory)
+    val newOrder: Order? = when {
+        missing.isEmpty() -> acceptOrder(
+            preloadedOrders.size + 1, customer, products, notes, required, inventory, deliveryPeople
+        )
+        else -> {
+            printRejectedOrder(missing)
+            null
+        }
     }
 
-    // R5. Asignación de repartidor (solo pedidos confirmados)
-    val repartidorAsignado: String = if (estadoPedido == "Cancelado") {
-        "Sin asignar"
-    } else {
-        asignarRepartidor(idPedido)
-    }
-    if (estadoPedido == "Preparación") {
-        estadoPedido = "En Camino"
+    // 5. Error controlado de inventario
+    println()
+    println("Demostración de error controlado de inventario:")
+    try {
+        restock(inventory, "cheese", -5)
+    } catch (e: IllegalArgumentException) {
+        println("Error: ${e.message}")
     }
 
-    // R6. Resumen del pedido
+    // 6. Resumen de cada pedido y reporte del día
     println()
-    println("==============================")
-    println("      RESUMEN DEL PEDIDO      ")
-    println("==============================")
-    println("Cliente")
-    println("  Nombre: $nombre")
-    println("  Dirección: $direccion")
-    println("  Teléfono: $telefono")
-    println("------------------------------")
-    println("Pizza")
-    println("  Nombre: $nombrePizza")
-    println("  Precio unitario: ${formatearMonto(precioUnitario)}")
-    println("------------------------------")
-    println("Pedido")
-    println("  Id: $idPedido")
-    println("  Cantidad: $cantidadPizzas")
-    println("  Subtotal: ${formatearMonto(subtotal)}")
-    println("  Descuento: ${formatearMonto(descuento)}")
-    println("  Total: ${formatearMonto(totalPedido)}")
-    println("  Estado: $estadoPedido")
-    println("  Repartidor: $repartidorAsignado")
-    println("==============================")
+    val dailyOrders: Array<Order> = (preloadedOrders + listOfNotNull(newOrder)).toTypedArray()
+    for (order in dailyOrders) {
+        printOrderSummary(order)
+    }
+    printDailyReport(dailyOrders)
 }
