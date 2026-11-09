@@ -16,6 +16,8 @@ import service.deductFromInventory
 import service.findMissingIngredients
 import service.notifyCustomer
 import service.printDailyReport
+import service.printIntegratedSummary
+import service.printInventoryErrorDemo
 import service.printInventory
 import service.printMenu
 import service.printOrderSummary
@@ -28,7 +30,6 @@ import service.readOrderDate
 import service.readPhone
 import service.readQuantity
 import service.readTextOrDefault
-import service.restock
 
 /**
  * Registra al cliente por consola aplicando valores por defecto y validaciones.
@@ -122,12 +123,7 @@ fun main() {
 
     // 5. Error controlado de inventario
     println()
-    println("Demostración de error controlado de inventario:")
-    try {
-        restock(inventory, "cheese", -5)
-    } catch (e: IllegalArgumentException) {
-        println("Error: ${e.message}")
-    }
+    printInventoryErrorDemo(inventory)
 
     // 6. Resumen de cada pedido y reporte del día
     println()
@@ -136,4 +132,7 @@ fun main() {
         printOrderSummary(order)
     }
     printDailyReport(dailyOrders)
+
+    // 7. Resumen integrado
+    printIntegratedSummary(menu, preloadedOrders, customerRegistry, customer, newOrder, orderDate)
 }

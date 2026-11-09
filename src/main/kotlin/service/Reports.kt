@@ -14,11 +14,12 @@ fun printInventory(inventory: Map<String, Int>) {
     }
 }
 
-/** Muestra el menú numerado usando describeProduct(). */
+/** Muestra el menú numerado usando describeProduct() y marca los productos promocionables. */
 fun printMenu(menu: List<Product>) {
     println("Menú:")
     for ((index, product) in menu.withIndex()) {
-        println("  ${index + 1}. ${product.describeProduct()}")
+        val promotion = promotionDescription(product)?.let { " - $PROMOTIONAL_MENU_LABEL: $it" } ?: ""
+        println("  ${index + 1}. ${product.describeProduct()}$promotion")
     }
 }
 
@@ -32,6 +33,16 @@ fun printPromotionalProducts(products: List<Product>) {
     println("Productos promocionables del pedido:")
     for (product in promotional) {
         println("  ${product.name}: ${promotionDescription(product)}")
+    }
+}
+
+/** Demuestra el error controlado del inventario al intentar reabastecer una cantidad no válida. */
+fun printInventoryErrorDemo(inventory: MutableMap<String, Int>) {
+    println("Demostración de error controlado de inventario:")
+    try {
+        restock(inventory, "cheese", -5)
+    } catch (e: IllegalArgumentException) {
+        println("Error: ${e.message}")
     }
 }
 
@@ -57,7 +68,7 @@ fun notifyCustomer(order: Order) {
 }
 
 /** Agrupa las pizzas por nombre, por ejemplo "Pepperoni x4". */
-private fun describePizzas(order: Order): String =
+fun describePizzas(order: Order): String =
     order.products.groupBy { it.name }.entries.joinToString(", ") { (name, items) -> "$name x${items.size}" }
 
 /** Indica si la fecha del pedido está dentro o fuera del periodo de promoción. */

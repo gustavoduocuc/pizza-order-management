@@ -62,3 +62,41 @@ fun createPreloadedOrders(menu: List<Product>, customerRegistry: CustomerRegistr
     onTheWay.changeStatus(OrderStatus.ON_THE_WAY)
     return listOf(inPreparation, ready, onTheWay)
 }
+
+/**
+ * Pedido de demostración de Luis Rojas con 2 Vegetariana, en preparación, para combinarlo con el pedido precargado #1.
+ * El cliente es una instancia nueva (no pasa por el registro): es igual al del pedido #1 por nombre y correo.
+ */
+fun createCombinationDemoOrder(menu: List<Product>): Order = Order(
+    COMBINATION_DEMO_ORDER_ID, Customer("Luis Rojas", "+56 (944) 444-444", "luis@mail.com", "Av. Central 100"),
+    listOf(menu[2], menu[2]), null, LocalDate.of(2026, 11, 10)
+)
+
+/** Productos para demostrar la igualdad: pizza, pizza destacada con el mismo nombre e ingrediente adicional. */
+fun createEqualityDemoProducts(): List<Product> = listOf(
+    Pizza("Pepperoni", 8990.0, mapOf("dough" to 1, "sauce" to 1, "cheese" to 2, "pepperoni" to 2)),
+    FeaturedPizza("pepperoni", 10990.0, mapOf("dough" to 1, "sauce" to 1, "cheese" to 2, "pepperoni" to 2)),
+    ExtraIngredient("Pepperoni", 1500.0, mapOf("pepperoni" to 1))
+)
+
+/** Clientes para demostrar la igualdad: Luis, el mismo Luis con otro formato y Luis con otro correo. */
+fun createEqualityDemoCustomers(): List<Customer> = listOf(
+    Customer("Luis Rojas", "+56 (944) 444-444", "luis@mail.com", "Av. Central 100"),
+    Customer("luis rojas", "+56 (911) 111-111", "LUIS@mail.com", "Otra calle 1"),
+    Customer("Luis Rojas", "+56 (944) 444-444", "luis.rojas@mail.com", "Av. Central 100")
+)
+
+/** Teléfonos de ejemplo: válidos en distintos formatos e inválidos. */
+fun createPhoneExamples(): List<String> =
+    listOf("930815676", "+56 9 3081 5676", "56930815676", "12345", "812345678")
+
+/** Correos de ejemplo: uno válido y uno inválido. */
+fun createEmailExamples(): List<String> = listOf("juan@mail.com", "juan@")
+
+/** Cantidades de ejemplo: los dos extremos válidos del rango y dos fuera de él. */
+fun createQuantityExamples(): List<Int> = listOf(1, 100, 0, 101)
+
+/** Fechas de ejemplo: los dos extremos del periodo de promoción y dos fuera de él. */
+fun createDateExamples(): List<LocalDate> = listOf(
+    LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30), LocalDate.of(2026, 10, 31), LocalDate.of(2026, 12, 5)
+)
