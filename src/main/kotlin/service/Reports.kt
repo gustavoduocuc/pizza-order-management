@@ -101,8 +101,9 @@ fun printDailyReport(orders: Array<Order>) {
     println("   REPORTE DE PEDIDOS DEL DÍA")
     println(SEPARATOR)
     for (order in orders) {
-        println("Pedido #${order.id} | Cliente: ${order.customer.name} | Pizzas: ${describePizzas(order)} " +
-            "| Total: ${formatAmount(order.calculateTotal())} | Estado: ${order.status.label}")
+        val (customer, _, total) = order
+        println("Pedido #${order.id} | Cliente: ${customer.name} | Pizzas: ${describePizzas(order)} " +
+            "| Total: ${formatAmount(total)} | Estado: ${order.status.label}")
     }
     val pendingOrders = orders.filter { it.status == OrderStatus.IN_PREPARATION }
     val completedOrders = orders.filter { it.status == OrderStatus.READY || it.status == OrderStatus.ON_THE_WAY }

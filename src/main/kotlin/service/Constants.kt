@@ -76,3 +76,18 @@ val QUANTITY_ERROR_MESSAGE: String = "La cantidad debe estar entre ${QUANTITY_RA
 /** Textos de las líneas nuevas del resumen del pedido. */
 const val WITHIN_PROMOTION_LABEL: String = "dentro del periodo de promoción"
 const val OUTSIDE_PROMOTION_LABEL: String = "fuera del periodo de promoción"
+
+/** Prefijos de los mensajes de los registros de clientes y productos. */
+const val CUSTOMER_REGISTERED_MESSAGE: String = "Cliente registrado"
+const val CUSTOMER_ALREADY_REGISTERED_MESSAGE: String = "Cliente ya registrado"
+const val DUPLICATE_PRODUCT_MESSAGE: String = "Producto duplicado"
+
+/** Texto que antecede a los datos del cliente tras registrarlo. */
+const val CUSTOMER_DATA_LABEL: String = "Datos del cliente"
+
+/** Separador de las notas al combinar dos pedidos. */
+const val NOTES_SEPARATOR: String = " | "
+
+/** Errores al combinar pedidos con el operador +. */
+const val DIFFERENT_CUSTOMER_ERROR_MESSAGE: String = "Solo se pueden combinar pedidos del mismo cliente"
+const val NOT_IN_PREPARATION_ERROR_MESSAGE: String = "Solo se pueden combinar pedidos en preparación"

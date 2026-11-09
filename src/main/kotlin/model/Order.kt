@@ -1,5 +1,8 @@
 package model
 
+import service.DIFFERENT_CUSTOMER_ERROR_MESSAGE
+import service.NOTES_SEPARATOR
+import service.NOT_IN_PREPARATION_ERROR_MESSAGE
 import service.OrderTotals
 import service.calculateTotals
 import service.countPizzas
@@ -63,4 +66,33 @@ class Order(
         }
         status = newStatus
     }
+
+    /**
+     * Equivale a combinar pedidos con el operador +.
+     * Crea un pedido nuevo con los productos de ambos, el id, el cliente y la fecha de este pedido (el izquierdo),
+     * las notas no nulas unidas con [NOTES_SEPARATOR], en preparación y sin repartidor. Los originales no cambian
+     * y los totales se recalculan a partir de los productos combinados.
+     * @throws IllegalArgumentException si los pedidos son de clientes distintos (comparados con ==).
+     * @throws IllegalStateException si alguno de los dos no está en preparación.
+     */
+    operator fun plus(other: Order): Order {
+        require(customer == other.customer) { DIFFERENT_CUSTOMER_ERROR_MESSAGE }
+        check(status == OrderStatus.IN_PREPARATION && other.status == OrderStatus.IN_PREPARATION) {
+            NOT_IN_PREPARATION_ERROR_MESSAGE
+        }
+        return Order(id, customer, products + other.products, combineNotes(notes, other.notes), date)
+    }
+
+    /** Une las notas no nulas con [NOTES_SEPARATOR], o retorna null si ninguna existe. */
+    private fun combineNotes(first: String?, second: String?): String? =
+        listOfNotNull(first, second).joinToString(NOTES_SEPARATOR).ifEmpty { null }
+
+    /** Permite desestructurar Pedido: cliente. */
+    operator fun component1(): Customer = customer
+
+    /** Permite desestructurar Pedido: productos. */
+    operator fun component2(): List<Product> = products
+
+    /** Permite desestructurar Pedido: total calculado. */
+    operator fun component3(): Double = calculateTotal()
 }

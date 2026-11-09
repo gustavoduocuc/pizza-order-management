@@ -4,6 +4,8 @@ import model.Order
 import model.OrderStatus
 import model.Product
 import java.time.LocalDate
+import service.CUSTOMER_DATA_LABEL
+import service.CustomerRegistry
 import service.assignNearestDeliveryPerson
 import service.calculateRequiredIngredients
 import service.createDeliveryPeople
@@ -28,15 +30,18 @@ import service.readQuantity
 import service.readTextOrDefault
 import service.restock
 
-/** Registra al cliente por consola aplicando valores por defecto y validaciones. */
-private fun registerCustomer(): Customer {
+/**
+ * Registra al cliente por consola aplicando valores por defecto y validaciones.
+ * Si ya existe un cliente igual, retorna el existente.
+ */
+private fun registerCustomer(customerRegistry: CustomerRegistry): Customer {
     println("=== Registro de cliente ===")
     val name = readTextOrDefault("Nombre: ", "nombre", "Sin nombre")
     val address = readTextOrDefault("Dirección: ", "dirección", "Sin dirección")
     val phone = readPhone()
     val email = readEmail()
-    val customer = Customer(name, phone, email, address)
-    println("Cliente registrado: ${customer.describe()}")
+    val customer = customerRegistry.register(Customer(name, phone, email, address))
+    println("$CUSTOMER_DATA_LABEL: ${customer.describe()}")
     return customer
 }
 
@@ -82,7 +87,8 @@ fun main() {
     val inventory = createInitialInventory()
     val menu = createMenu()
     val deliveryPeople = createDeliveryPeople()
-    val preloadedOrders = createPreloadedOrders(menu)
+    val customerRegistry = CustomerRegistry()
+    val preloadedOrders = createPreloadedOrders(menu, customerRegistry)
 
     // 1. Inventario y menú
     printInventory(inventory)
@@ -91,7 +97,7 @@ fun main() {
     println()
 
     // 2. Registro del cliente
-    val customer = registerCustomer()
+    val customer = registerCustomer(customerRegistry)
     val notes = readInput("Notas del pedido (opcional): ")?.ifEmpty { null }
     val orderDate = readOrderDate()
 
