@@ -22,6 +22,19 @@ fun printMenu(menu: List<Product>) {
     }
 }
 
+/** Muestra los productos promocionables, sin repetir por nombre, o avisa si no hay ninguno. */
+fun printPromotionalProducts(products: List<Product>) {
+    val promotional = findPromotionalProducts(products).distinctBy { it.name }
+    if (promotional.isEmpty()) {
+        println(NO_PROMOTIONAL_PRODUCTS_MESSAGE)
+        return
+    }
+    println("Productos promocionables del pedido:")
+    for (product in promotional) {
+        println("  ${product.name}: ${promotionDescription(product)}")
+    }
+}
+
 /** Informa los ingredientes faltantes y los pasos para reabastecer. */
 fun printRejectedOrder(missing: Map<String, Int>) {
     println("Pedido rechazado: no hay ingredientes suficientes.")

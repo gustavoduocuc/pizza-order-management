@@ -2,6 +2,7 @@ package model
 
 import service.OrderTotals
 import service.calculateTotals
+import service.countPizzas
 
 /**
  * Pedido de un cliente. Equivale a la clase Pedido
@@ -20,9 +21,9 @@ class Order(
     /** Repartidor asignado, o null si aún no tiene. */
     var deliveryPerson: DeliveryPerson? = null
 
-    private fun totals(): OrderTotals = calculateTotals(calculateSubtotal(), products.size)
+    private fun totals(): OrderTotals = calculateTotals(calculateSubtotal(), countPizzas(products))
 
-    /** Suma de los precios de todas las pizzas del pedido. */
+    /** Suma de los precios de todos los productos del pedido. */
     fun calculateSubtotal(): Double = products.sumOf { it.price }
 
     /** Descuento aplicado según la cantidad de pizzas. */
