@@ -4,6 +4,11 @@ import model.Customer
 import model.DeliveryPerson
 import model.Order
 import model.OrderStatus
+import model.Beverage
+import model.Combo
+import model.ExtraIngredient
+import model.FeaturedPizza
+import model.Pizza
 import model.Product
 
 // Datos fijos de la pizzería
@@ -17,11 +22,14 @@ fun createInitialInventory(): MutableMap<String, Int> = mutableMapOf(
     "vegetables" to 10
 )
 
-/** Menú de pizzas con los ingredientes que consume cada una. */
+/** Menú de productos con los ingredientes que consume cada uno. */
 fun createMenu(): List<Product> = listOf(
-    Product("Pepperoni", 8990.0, mapOf("dough" to 1, "sauce" to 1, "cheese" to 2, "pepperoni" to 2)),
-    Product("Cuatro Quesos", 9990.0, mapOf("dough" to 1, "sauce" to 1, "cheese" to 4)),
-    Product("Vegetariana", 8490.0, mapOf("dough" to 1, "sauce" to 1, "cheese" to 1, "vegetables" to 3))
+    Pizza("Pepperoni", 8990.0, mapOf("dough" to 1, "sauce" to 1, "cheese" to 2, "pepperoni" to 2)),
+    FeaturedPizza("Cuatro Quesos", 9990.0, mapOf("dough" to 1, "sauce" to 1, "cheese" to 4)),
+    Pizza("Vegetariana", 8490.0, mapOf("dough" to 1, "sauce" to 1, "cheese" to 1, "vegetables" to 3)),
+    Combo("Combo Familiar", 19990.0, mapOf("dough" to 2, "sauce" to 2, "cheese" to 4, "pepperoni" to 4)),
+    Beverage("Bebida 1.5L", 2490.0),
+    ExtraIngredient("Pepperoni extra", 1500.0, mapOf("pepperoni" to 1))
 )
 
 /** Repartidores con distintas distancias y disponibilidad. */

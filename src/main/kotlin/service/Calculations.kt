@@ -1,5 +1,7 @@
 package service
 
+import model.Product
+import model.ProductCategory
 import java.util.Locale
 
 /** Resultado del cálculo de un pedido: subtotal, descuento, impuesto y total. */
@@ -24,3 +26,6 @@ fun calculateTotals(subtotal: Double, pizzaCount: Int): OrderTotals {
 
 /** Formatea un monto con 2 decimales y punto decimal, por ejemplo "$12345.00". */
 fun formatAmount(value: Double): String = "$" + String.format(Locale.US, "%.2f", value)
+
+/** Cuenta los productos de categoría Pizza; solo ellos cuentan para el descuento por cantidad. */
+fun countPizzas(products: List<Product>): Int = products.count { it.category == ProductCategory.PIZZA }

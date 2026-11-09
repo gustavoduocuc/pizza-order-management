@@ -16,6 +16,7 @@ import service.printDailyReport
 import service.printInventory
 import service.printMenu
 import service.printOrderSummary
+import service.printPromotionalProducts
 import service.printRejectedOrder
 import service.readInput
 import service.readMenuChoice
@@ -56,6 +57,7 @@ private fun acceptOrder(
     order.changeStatus(OrderStatus.READY)
     deductFromInventory(required, inventory)
     println("Pedido confirmado.")
+    printPromotionalProducts(products)
     val deliveryPerson = assignNearestDeliveryPerson(deliveryPeople)
     if (deliveryPerson != null) {
         order.deliveryPerson = deliveryPerson
