@@ -3,6 +3,7 @@ import model.DeliveryPerson
 import model.Order
 import model.OrderStatus
 import model.Product
+import java.time.LocalDate
 import service.assignNearestDeliveryPerson
 import service.calculateRequiredIngredients
 import service.createDeliveryPeople
@@ -19,20 +20,21 @@ import service.printOrderSummary
 import service.printPromotionalProducts
 import service.printRejectedOrder
 import service.readInput
+import service.readEmail
 import service.readMenuChoice
+import service.readOrderDate
+import service.readPhone
 import service.readQuantity
 import service.readTextOrDefault
 import service.restock
-import service.validateEmail
-import service.validatePhone
 
 /** Registra al cliente por consola aplicando valores por defecto y validaciones. */
 private fun registerCustomer(): Customer {
     println("=== Registro de cliente ===")
     val name = readTextOrDefault("Nombre: ", "nombre", "Sin nombre")
     val address = readTextOrDefault("Dirección: ", "dirección", "Sin dirección")
-    val phone = validatePhone(readInput("Teléfono: "))
-    val email = validateEmail(readInput("Correo (opcional): "))
+    val phone = readPhone()
+    val email = readEmail()
     val customer = Customer(name, phone, email, address)
     println("Cliente registrado: ${customer.describe()}")
     return customer
@@ -48,11 +50,12 @@ private fun acceptOrder(
     customer: Customer,
     products: List<Product>,
     notes: String?,
+    date: LocalDate,
     required: Map<String, Int>,
     inventory: MutableMap<String, Int>,
     deliveryPeople: List<DeliveryPerson>
 ): Order? = try {
-    val order = Order(id, customer, products, notes)
+    val order = Order(id, customer, products, notes, date)
     order.calculateTotal()
     order.changeStatus(OrderStatus.READY)
     deductFromInventory(required, inventory)
@@ -90,10 +93,11 @@ fun main() {
     // 2. Registro del cliente
     val customer = registerCustomer()
     val notes = readInput("Notas del pedido (opcional): ")?.ifEmpty { null }
+    val orderDate = readOrderDate()
 
     // 3. Pizza y cantidad
     val product = readMenuChoice(menu)
-    val quantity = readQuantity()
+    val quantity = readQuantity("Cantidad de pizzas: ")
     val products = List(quantity) { product }
 
     // 4. Verificación de stock y aceptación del pedido
@@ -102,7 +106,7 @@ fun main() {
     val missing = findMissingIngredients(required, inventory)
     val newOrder: Order? = when {
         missing.isEmpty() -> acceptOrder(
-            preloadedOrders.size + 1, customer, products, notes, required, inventory, deliveryPeople
+            preloadedOrders.size + 1, customer, products, notes, orderDate, required, inventory, deliveryPeople
         )
         else -> {
             printRejectedOrder(missing)
