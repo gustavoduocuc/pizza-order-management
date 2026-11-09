@@ -60,11 +60,17 @@ fun notifyCustomer(order: Order) {
 private fun describePizzas(order: Order): String =
     order.products.groupBy { it.name }.entries.joinToString(", ") { (name, items) -> "$name x${items.size}" }
 
+/** Indica si la fecha del pedido está dentro o fuera del periodo de promoción. */
+private fun promotionPeriodLabel(order: Order): String =
+    if (isWithinPromotionPeriod(order.date)) WITHIN_PROMOTION_LABEL else OUTSIDE_PROMOTION_LABEL
+
 /** Imprime el resumen de un pedido: cliente, productos, totales, estado, repartidor y notas. */
 fun printOrderSummary(order: Order) {
     println(SEPARATOR)
     println("   RESUMEN DEL PEDIDO #${order.id}")
     println(SEPARATOR)
+    println("Fecha: ${order.date} (${promotionPeriodLabel(order)})")
+    println("------------------------------")
     println("Cliente")
     println("  Nombre: ${order.customer.name}")
     println("  Dirección: ${order.customer.address}")
@@ -78,7 +84,8 @@ fun printOrderSummary(order: Order) {
     println("------------------------------")
     println("Totales")
     println("  Subtotal: ${formatAmount(order.calculateSubtotal())}")
-    println("  Descuento: ${formatAmount(order.calculateDiscount())}")
+    println("  Descuento por cantidad: ${formatAmount(order.calculateQuantityDiscount())}")
+    println("  Descuento promoción: ${formatAmount(order.calculatePromotionDiscount())}")
     println("  IVA (${(TAX_RATE * 100).toInt()}%): ${formatAmount(order.calculateTax())}")
     println("  Total: ${formatAmount(order.calculateTotal())}")
     println("------------------------------")

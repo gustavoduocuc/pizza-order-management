@@ -10,6 +10,7 @@ import model.ExtraIngredient
 import model.FeaturedPizza
 import model.Pizza
 import model.Product
+import java.time.LocalDate
 
 // Datos fijos de la pizzería
 
@@ -34,27 +35,27 @@ fun createMenu(): List<Product> = listOf(
 
 /** Repartidores con distintas distancias y disponibilidad. */
 fun createDeliveryPeople(): List<DeliveryPerson> = listOf(
-    DeliveryPerson("Carlos", "911111111", null, 5.0, true),
-    DeliveryPerson("Valentina", "922222222", null, 2.0, false),
-    DeliveryPerson("Matías", "933333333", null, 3.0, true)
+    DeliveryPerson("Carlos", "+56 (911) 111-111", null, 5.0, true),
+    DeliveryPerson("Valentina", "+56 (922) 222-222", null, 2.0, false),
+    DeliveryPerson("Matías", "+56 (933) 333-333", null, 3.0, true)
 )
 
 /** Tres pedidos del día ya registrados, con estados distintos. */
 fun createPreloadedOrders(menu: List<Product>): List<Order> {
     val inPreparation = Order(
-        1, Customer("Luis Rojas", "944444444", "luis@mail.com", "Av. Central 100"),
-        listOf(menu[0], menu[0]), null
+        1, Customer("Luis Rojas", "+56 (944) 444-444", "luis@mail.com", "Av. Central 100"),
+        listOf(menu[0], menu[0]), null, LocalDate.of(2026, 11, 5)
     )
     val ready = Order(
-        2, Customer("Marta Silva", "955555555", null, "Calle Norte 25"),
-        listOf(menu[1]), "Sin cebolla"
+        2, Customer("Marta Silva", "+56 (955) 555-555", null, "Calle Norte 25"),
+        listOf(menu[1]), "Sin cebolla", LocalDate.of(2026, 10, 20)
     )
     ready.changeStatus(OrderStatus.READY)
     val onTheWay = Order(
-        3, Customer("Pedro Soto", "966666666", "pedro@mail.com", "Pasaje Sur 7"),
-        listOf(menu[2], menu[2], menu[0]), null
+        3, Customer("Pedro Soto", "+56 (966) 666-666", "pedro@mail.com", "Pasaje Sur 7"),
+        listOf(menu[2], menu[2], menu[0]), null, LocalDate.of(2026, 11, 20)
     )
-    onTheWay.deliveryPerson = DeliveryPerson("Rodrigo", "977777777", null, 1.5, false)
+    onTheWay.deliveryPerson = DeliveryPerson("Rodrigo", "+56 (977) 777-777", null, 1.5, false)
     onTheWay.changeStatus(OrderStatus.READY)
     onTheWay.changeStatus(OrderStatus.ON_THE_WAY)
     return listOf(inPreparation, ready, onTheWay)
