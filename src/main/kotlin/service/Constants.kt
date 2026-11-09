@@ -91,3 +91,28 @@ const val NOTES_SEPARATOR: String = " | "
 /** Errores al combinar pedidos con el operador +. */
 const val DIFFERENT_CUSTOMER_ERROR_MESSAGE: String = "Solo se pueden combinar pedidos del mismo cliente"
 const val NOT_IN_PREPARATION_ERROR_MESSAGE: String = "Solo se pueden combinar pedidos en preparación"
+
+/** Texto que marca en el menú a un producto promocionable; se completa con la descripción de la promoción. */
+const val PROMOTIONAL_MENU_LABEL: String = "Promocionable"
+
+/** Encabezados del resumen integrado y de sus secciones. */
+const val INTEGRATED_SUMMARY_TITLE: String = "RESUMEN INTEGRADO"
+const val COMBINED_ORDERS_HEADER: String = "PEDIDOS COMBINADOS (operador +)"
+const val DESTRUCTURING_HEADER: String = "CLIENTE DESESTRUCTURADO"
+const val PROMOTIONAL_PRODUCTS_HEADER: String = "PRODUCTOS PROMOCIONABLES (anotaciones + reflection)"
+const val CLASS_STRUCTURE_HEADER: String = "ESTRUCTURA DE CLASES (reflection)"
+const val EQUALITY_HEADER: String = "VALIDACIÓN DE IGUALDAD"
+const val INPUT_VALIDATIONS_HEADER: String = "VALIDACIONES DE ENTRADA"
+
+/** Ids de los pedidos precargados usados en la demostración de pedidos combinados. */
+const val COMBINATION_BASE_ORDER_ID: Int = 1
+const val OTHER_CUSTOMER_ORDER_ID: Int = 2
+
+/** Id del pedido de demostración que se combina con el pedido precargado. */
+const val COMBINATION_DEMO_ORDER_ID: Int = 100
+
+/** Textos de resultado de las demostraciones. */
+const val VALID_LABEL: String = "válido"
+const val INVALID_LABEL: String = "inválido"
+const val NO_ORDER_REGISTERED_MESSAGE: String = "No se registró el pedido ingresado."
+const val NO_EMAIL_LABEL: String = "Sin correo"
