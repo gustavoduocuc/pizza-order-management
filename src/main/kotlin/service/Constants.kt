@@ -22,7 +22,7 @@ const val DEFAULT_EMAIL: String = "correo@invalido.com"
 /** Máximo de intentos para reingresar un dato inválido. */
 const val MAX_INPUT_ATTEMPTS: Int = 3
 
-/** Cantidad de pizzas usada cuando se agotan los intentos. */
+/** Cantidad de productos usada cuando se agotan los intentos. */
 const val DEFAULT_QUANTITY: Int = 1
 
 /** Texto mostrado cuando un producto no consume ingredientes. */

@@ -102,9 +102,9 @@ fun main() {
     val notes = readInput("Notas del pedido (opcional): ")?.ifEmpty { null }
     val orderDate = readOrderDate()
 
-    // 3. Pizza y cantidad
+    // 3. Producto y cantidad
     val product = readMenuChoice(menu)
-    val quantity = readQuantity("Cantidad de pizzas: ")
+    val quantity = readQuantity("Cantidad de productos: ")
     val products = List(quantity) { product }
 
     // 4. Verificación de stock y aceptación del pedido
