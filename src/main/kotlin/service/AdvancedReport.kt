@@ -18,15 +18,6 @@ private fun printSectionHeader(title: String) {
     println(LIGHT_LINE)
 }
 
-/** Imprime subtotal, descuentos, IVA y total de un pedido. */
-private fun printOrderTotals(order: Order) {
-    println("  Subtotal: ${formatAmount(order.calculateSubtotal())}")
-    println("  Descuento por cantidad: ${formatAmount(order.calculateQuantityDiscount())}")
-    println("  Descuento promoción: ${formatAmount(order.calculatePromotionDiscount())}")
-    println("  IVA (${(TAX_RATE * 100).toInt()}%): ${formatAmount(order.calculateTax())}")
-    println("  Total: ${formatAmount(order.calculateTotal())}")
-}
-
 /** Imprime el id, el cliente y los productos de un pedido en una línea. */
 private fun printOrderDetail(title: String, order: Order) {
     println("$title (#${order.id}, ${order.customer.name}): ${describePizzas(order)}")
@@ -79,10 +70,6 @@ private fun printDestructuringSection(customer: Customer, combinedOrder: Order?)
     println("  Total: ${formatAmount(orderTotal)}")
 }
 
-/** Indica si la fecha está dentro o fuera del periodo de promoción. */
-private fun periodLabel(date: LocalDate): String =
-    if (isWithinPromotionPeriod(date)) WITHIN_PROMOTION_LABEL else OUTSIDE_PROMOTION_LABEL
-
 /** Sección 3: productos promocionables del menú y promoción recibida por el pedido ingresado. */
 private fun printPromotionalSection(menu: List<Product>, newOrder: Order?, orderDate: LocalDate) {
     printSectionHeader(PROMOTIONAL_PRODUCTS_HEADER)
@@ -91,7 +78,7 @@ private fun printPromotionalSection(menu: List<Product>, newOrder: Order?, order
         println("  ${product.name}: ${promotionDescription(product)}")
     }
     println("Periodo de promoción: ${PROMOTION_PERIOD.start} a ${PROMOTION_PERIOD.endInclusive}")
-    println("Fecha del pedido ingresado: $orderDate (${periodLabel(orderDate)})")
+    println("Fecha del pedido ingresado: $orderDate (${promotionPeriodLabel(orderDate)})")
     if (newOrder == null) {
         println(NO_ORDER_REGISTERED_MESSAGE)
         return
@@ -161,7 +148,7 @@ private fun printInputValidationSection() {
         println("  Cantidad $quantity -> $result")
     }
     for (date in createDateExamples()) {
-        println("  Fecha $date -> ${periodLabel(date)}")
+        println("  Fecha $date -> ${promotionPeriodLabel(date)}")
     }
 }
 

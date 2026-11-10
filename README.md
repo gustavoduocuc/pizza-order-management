@@ -58,8 +58,8 @@ El programa pide, en este orden, ocho datos:
 | 4 | `Correo (opcional):` | `nombre@dominio.ext`, o vacío | 3 intentos y luego `correo@invalido.com`; vacío significa sin correo |
 | 5 | `Notas del pedido (opcional):` | texto libre | vacío significa sin notas |
 | 6 | `Fecha del pedido (AAAA-MM-DD, Enter = hoy):` | fecha con ese formato | vacío usa la fecha de hoy; 3 intentos y luego hoy |
-| 7 | `Elige el número de la pizza:` | número del menú (1 a 6) | 3 intentos y luego el primer producto del menú |
-| 8 | `Cantidad de pizzas:` | entero entre 1 y 100 | 3 intentos y luego 1 |
+| 7 | `Elige el número del producto:` | número del menú (1 a 6) | 3 intentos y luego el primer producto del menú |
+| 8 | `Cantidad de productos:` | entero entre 1 y 100 | 3 intentos y luego 1 |
 
 Ejemplo de entrada (cada línea es una respuesta):
 
@@ -167,9 +167,9 @@ order-management/
 1. **Preparación.** Crea el inventario, el menú (sin productos duplicados), los tres repartidores, el registro de clientes y tres pedidos precargados (#1 en preparación, #2 listo, #3 en camino). Registrar sus clientes imprime `Cliente registrado: ...`.
 2. **Inventario y menú.** Imprime el inventario y el menú numerado; los productos anotados con `@Promotional` llevan la marca `Promocionable: <descripción>`.
 3. **Registro del cliente.** Pide nombre, dirección, teléfono y correo, y registra al cliente. Si ya existe uno igual (mismo nombre y correo), reutiliza el existente. Luego pide las notas y la fecha del pedido.
-4. **Pizza y cantidad.** Pide el número del producto y la cantidad; el pedido repite el producto tantas veces como la cantidad.
+4. **Producto y cantidad.** Pide el número del producto y la cantidad; el pedido repite el producto tantas veces como la cantidad.
 5. **Stock y aceptación.** Calcula los ingredientes necesarios y busca los faltantes.
-   - Si alcanzan: crea el pedido, lo pasa a `READY`, descuenta el inventario, imprime `Pedido confirmado.` y los productos promocionables del pedido, asigna al repartidor disponible más cercano (el pedido pasa a `ON_THE_WAY`) y notifica al cliente si tiene correo. Si no hay repartidores disponibles, el pedido queda en `READY`.
+   - Si alcanzan: crea el pedido, lo pasa a `READY`, descuenta el inventario, imprime `Pedido confirmado.` y los productos promocionables del pedido, asigna al repartidor disponible más cercano (el pedido pasa a `ON_THE_WAY`) y notifica al cliente si tiene un correo real (sin correo o con `correo@invalido.com` no se notifica). Si no hay repartidores disponibles, el pedido queda en `READY`.
    - Si no alcanzan: imprime `Pedido rechazado: no hay ingredientes suficientes.`, lo que falta de cada ingrediente y los pasos para reabastecer. El programa sigue con los pasos siguientes sin ese pedido.
 6. **Error controlado de inventario.** Intenta reabastecer una cantidad negativa y muestra `Error: La cantidad a reabastecer debe ser mayor que 0`.
 7. **Resúmenes.** Imprime el resumen de cada pedido (los precargados y el nuevo, si se aceptó) y el reporte de pedidos del día con pendientes y completados.
@@ -210,7 +210,7 @@ Ambos descuentos parten de su base original, es decir, no se aplican uno sobre e
 | Teléfono | 9 dígitos que empiezan con 9; se ignoran espacios, guiones, paréntesis, `+` y el prefijo `56` (`PHONE_REGEX` = `^9\d{8}$`) | se guarda como `+56 (9XX) XXX-XXX` |
 | Correo | `nombre@dominio.ext` (`EMAIL_REGEX`) | se guarda tal cual; vacío significa sin correo |
 | Fecha | `AAAA-MM-DD`; vacío es hoy | `LocalDate` |
-| Cantidad | entero de 1 a 100 | cantidad de pizzas del pedido |
+| Cantidad | entero de 1 a 100 | cantidad de productos del pedido |
 
 ### Estados del pedido
 

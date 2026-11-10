@@ -110,11 +110,11 @@ fun readQuantity(prompt: String): Int = readValidated(
  * avisa y retorna el primer producto.
  */
 fun readMenuChoice(menu: List<Product>): Product = readValidated(
-    prompt = "Elige el número de la pizza: ",
+    prompt = "Elige el número del producto: ",
     parse = { input -> parseInteger(input)?.let { menu.getOrNull(it - 1) } },
     errorMessage = "elige un número entre 1 y ${menu.size}",
     onExhausted = {
-        println("Se agotaron los intentos, se usará la pizza ${menu.first().name}.")
+        println("Se agotaron los intentos, se usará el producto ${menu.first().name}.")
         menu.first()
     }
 )

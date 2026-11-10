@@ -3,6 +3,7 @@ package service
 import model.Order
 import model.OrderStatus
 import model.Product
+import java.time.LocalDate
 
 private const val SEPARATOR = "=============================="
 
@@ -60,9 +61,9 @@ fun printRejectedOrder(missing: Map<String, Int>) {
     println("  3) Reintentar el pedido.")
 }
 
-/** Notifica al cliente solo si tiene correo. */
+/** Notifica al cliente solo si tiene un correo real: sin correo o con [DEFAULT_EMAIL] no se envía nada. */
 fun notifyCustomer(order: Order) {
-    order.customer.email?.let {
+    order.customer.email?.takeIf { it != DEFAULT_EMAIL }?.let {
         println("Notificación enviada a $it: tu pedido #${order.id} está ${order.status.label}")
     }
 }
@@ -71,16 +72,25 @@ fun notifyCustomer(order: Order) {
 fun describePizzas(order: Order): String =
     order.products.groupBy { it.name }.entries.joinToString(", ") { (name, items) -> "$name x${items.size}" }
 
-/** Indica si la fecha del pedido está dentro o fuera del periodo de promoción. */
-private fun promotionPeriodLabel(order: Order): String =
-    if (isWithinPromotionPeriod(order.date)) WITHIN_PROMOTION_LABEL else OUTSIDE_PROMOTION_LABEL
+/** Indica si la fecha está dentro o fuera del periodo de promoción. */
+fun promotionPeriodLabel(date: LocalDate): String =
+    if (isWithinPromotionPeriod(date)) WITHIN_PROMOTION_LABEL else OUTSIDE_PROMOTION_LABEL
+
+/** Imprime subtotal, descuentos, IVA y total de un pedido. */
+fun printOrderTotals(order: Order) {
+    println("  Subtotal: ${formatAmount(order.calculateSubtotal())}")
+    println("  Descuento por cantidad: ${formatAmount(order.calculateQuantityDiscount())}")
+    println("  Descuento promoción: ${formatAmount(order.calculatePromotionDiscount())}")
+    println("  IVA (${(TAX_RATE * 100).toInt()}%): ${formatAmount(order.calculateTax())}")
+    println("  Total: ${formatAmount(order.calculateTotal())}")
+}
 
 /** Imprime el resumen de un pedido: cliente, productos, totales, estado, repartidor y notas. */
 fun printOrderSummary(order: Order) {
     println(SEPARATOR)
     println("   RESUMEN DEL PEDIDO #${order.id}")
     println(SEPARATOR)
-    println("Fecha: ${order.date} (${promotionPeriodLabel(order)})")
+    println("Fecha: ${order.date} (${promotionPeriodLabel(order.date)})")
     println("------------------------------")
     println("Cliente")
     println("  Nombre: ${order.customer.name}")
@@ -94,11 +104,7 @@ fun printOrderSummary(order: Order) {
     }
     println("------------------------------")
     println("Totales")
-    println("  Subtotal: ${formatAmount(order.calculateSubtotal())}")
-    println("  Descuento por cantidad: ${formatAmount(order.calculateQuantityDiscount())}")
-    println("  Descuento promoción: ${formatAmount(order.calculatePromotionDiscount())}")
-    println("  IVA (${(TAX_RATE * 100).toInt()}%): ${formatAmount(order.calculateTax())}")
-    println("  Total: ${formatAmount(order.calculateTotal())}")
+    printOrderTotals(order)
     println("------------------------------")
     println("Estado: ${order.status.label}")
     println("Repartidor: ${order.deliveryPerson?.name ?: "Sin asignar"}")
