@@ -1,8 +1,8 @@
 # Gestión de pedidos de una pizzería
 
-Aplicación de consola escrita en Kotlin para gestionar los pedidos de una pizzería: muestra el inventario y el menú, registra a un cliente, valida los datos que se ingresan, calcula descuentos e IVA, verifica el stock, asigna un repartidor y entrega resúmenes del día. Es un proyecto de la asignatura Desarrollo APP Móviles I (PMY2201).
+Aplicación de consola escrita en Kotlin para gestionar los pedidos de una pizzería: muestra el inventario y el menú, registra a un cliente, valida los datos que se ingresan, calcula descuentos e IVA, verifica el stock, asigna un repartidor y entrega resúmenes del día.
 
-El código está en inglés y los textos de consola, comentarios y documentación están en español. La sección 8 relaciona ambos nombres.
+Para mantener una convención global, el código está en inglés, no obstante, los textos de consola, comentarios y documentación están en español.
 
 ## 1. Requisitos
 
