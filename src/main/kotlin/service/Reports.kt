@@ -3,6 +3,7 @@ package service
 import model.Order
 import model.OrderStatus
 import model.Product
+import java.time.LocalDate
 
 private const val SEPARATOR = "=============================="
 
@@ -14,11 +15,35 @@ fun printInventory(inventory: Map<String, Int>) {
     }
 }
 
-/** Muestra el menú numerado usando describeProduct(). */
+/** Muestra el menú numerado usando describeProduct() y marca los productos promocionables. */
 fun printMenu(menu: List<Product>) {
     println("Menú:")
     for ((index, product) in menu.withIndex()) {
-        println("  ${index + 1}. ${product.describeProduct()}")
+        val promotion = promotionDescription(product)?.let { " - $PROMOTIONAL_MENU_LABEL: $it" } ?: ""
+        println("  ${index + 1}. ${product.describeProduct()}$promotion")
+    }
+}
+
+/** Muestra los productos promocionables, sin repetir por nombre, o avisa si no hay ninguno. */
+fun printPromotionalProducts(products: List<Product>) {
+    val promotional = findPromotionalProducts(products).distinctBy { it.name }
+    if (promotional.isEmpty()) {
+        println(NO_PROMOTIONAL_PRODUCTS_MESSAGE)
+        return
+    }
+    println("Productos promocionables del pedido:")
+    for (product in promotional) {
+        println("  ${product.name}: ${promotionDescription(product)}")
+    }
+}
+
+/** Demuestra el error controlado del inventario al intentar reabastecer una cantidad no válida. */
+fun printInventoryErrorDemo(inventory: MutableMap<String, Int>) {
+    println("Demostración de error controlado de inventario:")
+    try {
+        restock(inventory, "cheese", -5)
+    } catch (e: IllegalArgumentException) {
+        println("Error: ${e.message}")
     }
 }
 
@@ -36,22 +61,37 @@ fun printRejectedOrder(missing: Map<String, Int>) {
     println("  3) Reintentar el pedido.")
 }
 
-/** Notifica al cliente solo si tiene correo. */
+/** Notifica al cliente solo si tiene un correo real: sin correo o con [DEFAULT_EMAIL] no se envía nada. */
 fun notifyCustomer(order: Order) {
-    order.customer.email?.let {
+    order.customer.email?.takeIf { it != DEFAULT_EMAIL }?.let {
         println("Notificación enviada a $it: tu pedido #${order.id} está ${order.status.label}")
     }
 }
 
 /** Agrupa las pizzas por nombre, por ejemplo "Pepperoni x4". */
-private fun describePizzas(order: Order): String =
+fun describePizzas(order: Order): String =
     order.products.groupBy { it.name }.entries.joinToString(", ") { (name, items) -> "$name x${items.size}" }
+
+/** Indica si la fecha está dentro o fuera del periodo de promoción. */
+fun promotionPeriodLabel(date: LocalDate): String =
+    if (isWithinPromotionPeriod(date)) WITHIN_PROMOTION_LABEL else OUTSIDE_PROMOTION_LABEL
+
+/** Imprime subtotal, descuentos, IVA y total de un pedido. */
+fun printOrderTotals(order: Order) {
+    println("  Subtotal: ${formatAmount(order.calculateSubtotal())}")
+    println("  Descuento por cantidad: ${formatAmount(order.calculateQuantityDiscount())}")
+    println("  Descuento promoción: ${formatAmount(order.calculatePromotionDiscount())}")
+    println("  IVA (${(TAX_RATE * 100).toInt()}%): ${formatAmount(order.calculateTax())}")
+    println("  Total: ${formatAmount(order.calculateTotal())}")
+}
 
 /** Imprime el resumen de un pedido: cliente, productos, totales, estado, repartidor y notas. */
 fun printOrderSummary(order: Order) {
     println(SEPARATOR)
     println("   RESUMEN DEL PEDIDO #${order.id}")
     println(SEPARATOR)
+    println("Fecha: ${order.date} (${promotionPeriodLabel(order.date)})")
+    println("------------------------------")
     println("Cliente")
     println("  Nombre: ${order.customer.name}")
     println("  Dirección: ${order.customer.address}")
@@ -64,10 +104,7 @@ fun printOrderSummary(order: Order) {
     }
     println("------------------------------")
     println("Totales")
-    println("  Subtotal: ${formatAmount(order.calculateSubtotal())}")
-    println("  Descuento: ${formatAmount(order.calculateDiscount())}")
-    println("  IVA (${(TAX_RATE * 100).toInt()}%): ${formatAmount(order.calculateTax())}")
-    println("  Total: ${formatAmount(order.calculateTotal())}")
+    printOrderTotals(order)
     println("------------------------------")
     println("Estado: ${order.status.label}")
     println("Repartidor: ${order.deliveryPerson?.name ?: "Sin asignar"}")
@@ -81,8 +118,9 @@ fun printDailyReport(orders: Array<Order>) {
     println("   REPORTE DE PEDIDOS DEL DÍA")
     println(SEPARATOR)
     for (order in orders) {
-        println("Pedido #${order.id} | Cliente: ${order.customer.name} | Pizzas: ${describePizzas(order)} " +
-            "| Total: ${formatAmount(order.calculateTotal())} | Estado: ${order.status.label}")
+        val (customer, _, total) = order
+        println("Pedido #${order.id} | Cliente: ${customer.name} | Pizzas: ${describePizzas(order)} " +
+            "| Total: ${formatAmount(total)} | Estado: ${order.status.label}")
     }
     val pendingOrders = orders.filter { it.status == OrderStatus.IN_PREPARATION }
     val completedOrders = orders.filter { it.status == OrderStatus.READY || it.status == OrderStatus.ON_THE_WAY }

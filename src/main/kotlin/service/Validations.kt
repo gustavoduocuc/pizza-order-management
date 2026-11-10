@@ -1,9 +1,8 @@
 package service
 
 import model.Product
-
-private val PHONE_REGEX = Regex("^\\d{9}$")
-private val EMAIL_REGEX = Regex("^[\\w.+-]+@[\\w-]+(\\.[\\w-]+)*\\.[A-Za-z]{2,}$")
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
 
 /** Muestra [prompt] y lee una línea de la consola, o null si no hay entrada. */
 fun readInput(prompt: String): String? {
@@ -23,81 +22,125 @@ fun readTextOrDefault(prompt: String, fieldName: String, defaultValue: String): 
 }
 
 /**
- * Quita espacios y el prefijo "+56" y valida que queden 9 dígitos.
- * Si es inválido o vacío, avisa y retorna [DEFAULT_PHONE].
+ * Lee un dato con reintentos: muestra [prompt] y aplica [parse], que retorna null si la entrada es inválida.
+ * Cada fallo muestra "Error: [errorMessage] (intento X de N)"; al agotar [MAX_INPUT_ATTEMPTS]
+ * retorna lo que entregue [onExhausted], que es quien avisa al usuario.
  */
-fun validatePhone(input: String?): String {
-    val cleaned = (input ?: "").replace(" ", "").removePrefix("+56")
-    return if (PHONE_REGEX.matches(cleaned)) {
-        cleaned
-    } else {
-        println("Advertencia: teléfono vacío o inválido, se usará $DEFAULT_PHONE.")
-        DEFAULT_PHONE
+fun <T> readValidated(prompt: String, parse: (String?) -> T?, errorMessage: String, onExhausted: () -> T): T {
+    for (attempt in 1..MAX_INPUT_ATTEMPTS) {
+        val value = parse(readInput(prompt))
+        if (value != null) {
+            return value
+        }
+        println("Error: $errorMessage (intento $attempt de $MAX_INPUT_ATTEMPTS)")
     }
+    return onExhausted()
 }
 
+/** Indica si el correo tiene el formato nombre@dominio.ext. */
+fun isValidEmail(email: String): Boolean = EMAIL_REGEX.matches(email)
+
 /**
- * Valida el correo. Vacío retorna null (cliente sin correo);
- * con formato inválido avisa y retorna [DEFAULT_EMAIL].
+ * Lee el correo (opcional). Vacío retorna null; si el formato es inválido lo pide de nuevo
+ * y, al agotar los intentos, avisa y retorna [DEFAULT_EMAIL].
+ * Internamente "" representa "sin correo", porque null significa "entrada inválida".
  */
-fun validateEmail(input: String?): String? {
-    val email = input?.trim()
-    return when {
-        email.isNullOrEmpty() -> null
-        EMAIL_REGEX.matches(email) -> email
-        else -> {
-            println("Advertencia: correo con formato inválido, se usará $DEFAULT_EMAIL.")
+fun readEmail(): String? {
+    val email = readValidated(
+        prompt = "Correo (opcional): ",
+        parse = { input -> if (input.isNullOrEmpty()) "" else input.takeIf(::isValidEmail) },
+        errorMessage = EMAIL_ERROR_MESSAGE,
+        onExhausted = {
+            println("Aviso: se agotaron los intentos, se usará el correo $DEFAULT_EMAIL.")
             DEFAULT_EMAIL
         }
-    }
+    )
+    return email.ifEmpty { null }
 }
 
 /**
- * Lee la cantidad de pizzas, reintentando hasta [MAX_INPUT_ATTEMPTS] veces
- * si no es un entero mayor que 0. Si se agotan, retorna [DEFAULT_QUANTITY].
+ * Quita espacios, guiones, paréntesis, "+" y el prefijo "56", y valida que queden 9 dígitos
+ * que empiecen con 9. Si es válido retorna "+56 (9XX) XXX-XXX"; si no, null.
  */
-fun readQuantity(): Int {
-    var attempts = 0
-    while (attempts < MAX_INPUT_ATTEMPTS) {
-        val quantity = try {
-            readInput("Cantidad de pizzas: ")?.toInt()
-        } catch (e: NumberFormatException) {
-            null
-        }
-        if (quantity != null && quantity > 0) {
-            return quantity
-        }
-        attempts++
-        println("Error: ingresa un número entero mayor que 0 (intento $attempts de $MAX_INPUT_ATTEMPTS).")
+fun formatPhone(input: String?): String? {
+    val digits = (input ?: "").replace(PHONE_SEPARATORS_REGEX, "").removePrefix(PHONE_COUNTRY_PREFIX)
+    if (!PHONE_REGEX.matches(digits)) {
+        return null
     }
-    println("Se agotaron los intentos, se usará la cantidad $DEFAULT_QUANTITY.")
-    return DEFAULT_QUANTITY
+    return "+$PHONE_COUNTRY_PREFIX (${digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6)}"
+}
+
+/** Lee el teléfono con reintentos; al agotar los intentos avisa y retorna [DEFAULT_PHONE]. */
+fun readPhone(): String = readValidated(
+    prompt = "Teléfono: ",
+    parse = ::formatPhone,
+    errorMessage = PHONE_ERROR_MESSAGE,
+    onExhausted = {
+        println("Aviso: se agotaron los intentos, se usará el teléfono $DEFAULT_PHONE.")
+        DEFAULT_PHONE
+    }
+)
+
+/** Indica si la cantidad está dentro de [QUANTITY_RANGE]. */
+fun isValidQuantity(quantity: Int): Boolean = quantity in QUANTITY_RANGE
+
+/** Convierte el texto en un entero, o null si no es numérico. */
+private fun parseInteger(input: String?): Int? = try {
+    input?.toInt()
+} catch (e: NumberFormatException) {
+    null
 }
 
 /**
- * Lee el número de la pizza elegida del menú, reintentando hasta
- * [MAX_INPUT_ATTEMPTS] veces. Si se agotan, retorna la primera pizza.
+ * Lee una cantidad dentro de [QUANTITY_RANGE], mostrando [prompt]. Si se agotan los intentos,
+ * avisa y retorna [DEFAULT_QUANTITY].
  */
-fun readMenuChoice(menu: List<Product>): Product {
-    var attempts = 0
-    while (attempts < MAX_INPUT_ATTEMPTS) {
-        val choice = try {
-            readInput("Elige el número de la pizza: ")?.toInt()
-        } catch (e: NumberFormatException) {
-            null
-        }
-        val selected: Product? = choice?.let { number ->
-            when (number) {
-                in 1..menu.size -> menu[number - 1]
-                else -> null
-            }
-        }
-        if (selected != null) {
-            return selected
-        }
-        attempts++
-        println("Error: elige un número entre 1 y ${menu.size} (intento $attempts de $MAX_INPUT_ATTEMPTS).")
+fun readQuantity(prompt: String): Int = readValidated(
+    prompt = prompt,
+    parse = { input -> parseInteger(input)?.takeIf(::isValidQuantity) },
+    errorMessage = QUANTITY_ERROR_MESSAGE,
+    onExhausted = {
+        println("Se agotaron los intentos, se usará la cantidad $DEFAULT_QUANTITY.")
+        DEFAULT_QUANTITY
     }
-    println("Se agotaron los intentos, se usará la pizza ${menu.first().name}.")
-    return menu.first()
+)
+
+/**
+ * Lee el número del producto elegido del menú. Si se agotan los intentos,
+ * avisa y retorna el primer producto.
+ */
+fun readMenuChoice(menu: List<Product>): Product = readValidated(
+    prompt = "Elige el número del producto: ",
+    parse = { input -> parseInteger(input)?.let { menu.getOrNull(it - 1) } },
+    errorMessage = "elige un número entre 1 y ${menu.size}",
+    onExhausted = {
+        println("Se agotaron los intentos, se usará el producto ${menu.first().name}.")
+        menu.first()
+    }
+)
+
+/** Indica si la fecha está dentro de [PROMOTION_PERIOD]. */
+fun isWithinPromotionPeriod(date: LocalDate): Boolean = date in PROMOTION_PERIOD
+
+/** Convierte AAAA-MM-DD en fecha (vacío es hoy), o null si el formato o la fecha no son válidos. */
+private fun parseOrderDate(input: String?): LocalDate? {
+    if (input.isNullOrEmpty()) {
+        return LocalDate.now()
+    }
+    return try {
+        LocalDate.parse(input)
+    } catch (e: DateTimeParseException) {
+        null
+    }
 }
+
+/** Lee la fecha del pedido; vacío es hoy y, al agotar los intentos, avisa y usa hoy. */
+fun readOrderDate(): LocalDate = readValidated(
+    prompt = "Fecha del pedido (AAAA-MM-DD, Enter = hoy): ",
+    parse = ::parseOrderDate,
+    errorMessage = DATE_ERROR_MESSAGE,
+    onExhausted = {
+        println("Aviso: se agotaron los intentos, se usará la fecha de hoy.")
+        LocalDate.now()
+    }
+)

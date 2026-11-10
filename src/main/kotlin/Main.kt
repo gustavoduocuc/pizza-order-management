@@ -3,6 +3,9 @@ import model.DeliveryPerson
 import model.Order
 import model.OrderStatus
 import model.Product
+import java.time.LocalDate
+import service.CUSTOMER_DATA_LABEL
+import service.CustomerRegistry
 import service.assignNearestDeliveryPerson
 import service.calculateRequiredIngredients
 import service.createDeliveryPeople
@@ -13,27 +16,33 @@ import service.deductFromInventory
 import service.findMissingIngredients
 import service.notifyCustomer
 import service.printDailyReport
+import service.printIntegratedSummary
+import service.printInventoryErrorDemo
 import service.printInventory
 import service.printMenu
 import service.printOrderSummary
+import service.printPromotionalProducts
 import service.printRejectedOrder
 import service.readInput
+import service.readEmail
 import service.readMenuChoice
+import service.readOrderDate
+import service.readPhone
 import service.readQuantity
 import service.readTextOrDefault
-import service.restock
-import service.validateEmail
-import service.validatePhone
 
-/** Registra al cliente por consola aplicando valores por defecto y validaciones. */
-private fun registerCustomer(): Customer {
+/**
+ * Registra al cliente por consola aplicando valores por defecto y validaciones.
+ * Si ya existe un cliente igual, retorna el existente.
+ */
+private fun registerCustomer(customerRegistry: CustomerRegistry): Customer {
     println("=== Registro de cliente ===")
     val name = readTextOrDefault("Nombre: ", "nombre", "Sin nombre")
     val address = readTextOrDefault("Dirección: ", "dirección", "Sin dirección")
-    val phone = validatePhone(readInput("Teléfono: "))
-    val email = validateEmail(readInput("Correo (opcional): "))
-    val customer = Customer(name, phone, email, address)
-    println("Cliente registrado: ${customer.describe()}")
+    val phone = readPhone()
+    val email = readEmail()
+    val customer = customerRegistry.register(Customer(name, phone, email, address))
+    println("$CUSTOMER_DATA_LABEL: ${customer.describe()}")
     return customer
 }
 
@@ -47,15 +56,17 @@ private fun acceptOrder(
     customer: Customer,
     products: List<Product>,
     notes: String?,
+    date: LocalDate,
     required: Map<String, Int>,
     inventory: MutableMap<String, Int>,
     deliveryPeople: List<DeliveryPerson>
 ): Order? = try {
-    val order = Order(id, customer, products, notes)
+    val order = Order(id, customer, products, notes, date)
     order.calculateTotal()
     order.changeStatus(OrderStatus.READY)
     deductFromInventory(required, inventory)
     println("Pedido confirmado.")
+    printPromotionalProducts(products)
     val deliveryPerson = assignNearestDeliveryPerson(deliveryPeople)
     if (deliveryPerson != null) {
         order.deliveryPerson = deliveryPerson
@@ -77,7 +88,8 @@ fun main() {
     val inventory = createInitialInventory()
     val menu = createMenu()
     val deliveryPeople = createDeliveryPeople()
-    val preloadedOrders = createPreloadedOrders(menu)
+    val customerRegistry = CustomerRegistry()
+    val preloadedOrders = createPreloadedOrders(menu, customerRegistry)
 
     // 1. Inventario y menú
     printInventory(inventory)
@@ -86,12 +98,13 @@ fun main() {
     println()
 
     // 2. Registro del cliente
-    val customer = registerCustomer()
+    val customer = registerCustomer(customerRegistry)
     val notes = readInput("Notas del pedido (opcional): ")?.ifEmpty { null }
+    val orderDate = readOrderDate()
 
-    // 3. Pizza y cantidad
+    // 3. Producto y cantidad
     val product = readMenuChoice(menu)
-    val quantity = readQuantity()
+    val quantity = readQuantity("Cantidad de productos: ")
     val products = List(quantity) { product }
 
     // 4. Verificación de stock y aceptación del pedido
@@ -100,7 +113,7 @@ fun main() {
     val missing = findMissingIngredients(required, inventory)
     val newOrder: Order? = when {
         missing.isEmpty() -> acceptOrder(
-            preloadedOrders.size + 1, customer, products, notes, required, inventory, deliveryPeople
+            preloadedOrders.size + 1, customer, products, notes, orderDate, required, inventory, deliveryPeople
         )
         else -> {
             printRejectedOrder(missing)
@@ -110,12 +123,7 @@ fun main() {
 
     // 5. Error controlado de inventario
     println()
-    println("Demostración de error controlado de inventario:")
-    try {
-        restock(inventory, "cheese", -5)
-    } catch (e: IllegalArgumentException) {
-        println("Error: ${e.message}")
-    }
+    printInventoryErrorDemo(inventory)
 
     // 6. Resumen de cada pedido y reporte del día
     println()
@@ -124,4 +132,7 @@ fun main() {
         printOrderSummary(order)
     }
     printDailyReport(dailyOrders)
+
+    // 7. Resumen integrado
+    printIntegratedSummary(menu, preloadedOrders, customerRegistry, customer, newOrder, orderDate)
 }
